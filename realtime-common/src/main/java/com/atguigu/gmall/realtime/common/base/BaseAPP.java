@@ -16,6 +16,13 @@ import static org.apache.flink.streaming.api.environment.CheckpointConfig.Extern
  * 基类
  * */
 public abstract class BaseAPP {
+    /**
+     * 程序启动
+     * @param port  webUI端口
+     * @param parallelism   并行度
+     * @param ckAndGroupId  消费者组id
+     * @param topicName 主题
+     */
     public void start(int port,int parallelism, String ckAndGroupId, String topicName) {
 
         // 1.2 获取流处理环境，并指定本地测试时启动 WebUI 所绑定的端口
@@ -53,7 +60,7 @@ public abstract class BaseAPP {
         DataStreamSource<String> kafkaSource = env.fromSource(KafkaSource.<String>builder()
                 .setBootstrapServers("hadoop102:9092")
                 .setTopics(topicName)
-                .setStartingOffsets(OffsetsInitializer.latest())    // 设置消费偏移量
+                .setStartingOffsets(OffsetsInitializer.earliest())    // 设置消费偏移量
                 .setGroupId(ckAndGroupId)
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build(), WatermarkStrategy.noWatermarks(), "kafka_source");
@@ -69,7 +76,9 @@ public abstract class BaseAPP {
     }
 
     /**
-    * 具体业务处理函数
-    * */
-    public abstract void handle(StreamExecutionEnvironment env,DataStreamSource<String> kafkaSource);
+     * 业务实现
+     * @param env   flink运行环境
+     * @param stream   数据源
+     */
+    public abstract void handle(StreamExecutionEnvironment env,DataStreamSource<String> stream);
 }
