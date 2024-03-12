@@ -53,14 +53,13 @@ public abstract class BaseAPP {
         DataStreamSource<String> kafkaSource = env.fromSource(KafkaSource.<String>builder()
                 .setBootstrapServers("hadoop102:9092")
                 .setTopics(topicName)
-                .setStartingOffsets(OffsetsInitializer.earliest())
+                .setStartingOffsets(OffsetsInitializer.latest())    // 设置消费偏移量
                 .setGroupId(ckAndGroupId)
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build(), WatermarkStrategy.noWatermarks(), "kafka_source");
 
         //对数据源处理
         handle(env,kafkaSource);
-//        kafkaSource.print();
 
         try {
             env.execute();
@@ -69,5 +68,8 @@ public abstract class BaseAPP {
         }
     }
 
+    /**
+    * 具体业务处理函数
+    * */
     public abstract void handle(StreamExecutionEnvironment env,DataStreamSource<String> kafkaSource);
 }

@@ -1,5 +1,6 @@
 package com.atguigu.gmall.realtime.common.util;
 
+import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall.realtime.common.constant.Constant;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
@@ -14,6 +15,7 @@ import java.io.IOException;
 public class HBaseUtil {
     /**
      * 获取HBase连接
+     *
      * @return 同步连接对象
      */
     public static Connection getConnection() {
@@ -32,6 +34,7 @@ public class HBaseUtil {
 
     /**
      * 关闭连接
+     *
      * @param connection 同步连接对象
      */
     public static void closeConnection(Connection connection) {
@@ -46,10 +49,11 @@ public class HBaseUtil {
 
     /**
      * 创建HBase表格
+     *
      * @param connection 同步连接对象
-     * @param namespace 命名空间
-     * @param tableName 表名
-     * @param family 列族
+     * @param namespace  命名空间
+     * @param tableName  表名
+     * @param family     列族
      * @throws IOException 获取Admin连接异常
      */
     public static void createTable(Connection connection, String namespace, String tableName, String... family)
@@ -61,7 +65,7 @@ public class HBaseUtil {
         Admin admin = connection.getAdmin();
 
         TableDescriptorBuilder tableDescriptorBuilder = TableDescriptorBuilder
-                .newBuilder(TableName.valueOf(namespace,tableName));
+                .newBuilder(TableName.valueOf(namespace, tableName));
 
         for (String s : family) {
             ColumnFamilyDescriptor familyDescriptor = ColumnFamilyDescriptorBuilder
@@ -72,7 +76,8 @@ public class HBaseUtil {
         try {
             admin.createTable(tableDescriptorBuilder.build());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+//            throw new RuntimeException(e);
+            System.out.println("表格" + namespace + ":" + tableName + "已创建，无需重复创建");
         }
 
         admin.close();
@@ -80,17 +85,18 @@ public class HBaseUtil {
 
     /**
      * 删除表格
+     *
      * @param connection 同步连接对象
-     * @param namespace 命名空间
-     * @param tableName 表名
+     * @param namespace  命名空间
+     * @param tableName  表名
      * @throws IOException 获取Admin连接异常
      */
     public static void dropTable(Connection connection, String namespace, String tableName) throws IOException {
         Admin admin = connection.getAdmin();
 
         try {
-            admin.disableTable(TableName.valueOf(namespace,tableName));
-            admin.deleteTable(TableName.valueOf(namespace,tableName));
+            admin.disableTable(TableName.valueOf(namespace, tableName));
+            admin.deleteTable(TableName.valueOf(namespace, tableName));
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -99,4 +105,57 @@ public class HBaseUtil {
         admin.close();
     }
 
+    /**
+     * 写出数据到HBase
+     * @param connection 同步连接
+     * @param namespace 命名空间
+     * @param tableName 表名
+     * @param rowKey 行键
+     * @param family 列族
+     * @param data 数据
+     */
+    public static void putCells(Connection connection, String namespace, String tableName, String rowKey, String family, JSONObject data) throws IOException {
+        // 获取Table
+        Table table = connection.getTable(TableName.valueOf(namespace,tableName));
+
+        // 数据写出
+        Put put = new Put(Bytes.toBytes(rowKey));
+        for (String col : data.keySet()) {
+            String colValue = data.getString(col);
+            if(colValue != null){
+                put.addColumn(Bytes.toBytes(family),Bytes.toBytes(col),Bytes.toBytes(colValue));
+            }
+        }
+        try {
+            table.put(put);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        //关闭Table
+        table.close();
+    }
+
+    /**
+     * 删除整行数据
+     * @param connection 同步连接
+     * @param namespace 命名空间
+     * @param tableName 表名
+     * @param rowKey 行键
+     */
+    public static void deleteCells(Connection connection, String namespace, String tableName, String rowKey) throws IOException {
+        // 获取Table
+        Table table = connection.getTable(TableName.valueOf(namespace,tableName));
+
+        //删除
+        Delete delete = new Delete(Bytes.toBytes(rowKey));
+        try {
+            table.delete(delete);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        //关闭Table
+        table.close();
+    }
 }
