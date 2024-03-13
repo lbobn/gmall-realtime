@@ -27,7 +27,7 @@ import org.apache.flink.util.OutputTag;
 import java.time.Duration;
 
 /**
- * @Description
+ * @Description 日志数据的拆分并传递到下游
  * @Author lubb
  * @Time 2024-03-12 20:23
  */
