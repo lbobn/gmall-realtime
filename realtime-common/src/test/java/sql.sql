@@ -237,8 +237,7 @@ from cancel_table ct
 
 
 
-select +
-           `data`['id']       id,
+select `data`['id']           id,
        `data`['operate_time'] operate_time,
        `data`['province_id']  province_id,
        ts
@@ -269,4 +268,72 @@ create table dwd_trade_order_cancel
     activity_rule_id      STRING,
     coupon_id             STRING,
     ts                    bigint
+);
+
+
+
+select `data`['user_id']       user_id,
+       `data`['order_id']      order_id,
+       `data`['payment_type']  payment_type,
+       `data`['callback_time'] callback_time,
+       `pt`,
+       ts,
+       et
+from topic_db
+where `database` = 'gmall'
+  and `table` = 'payment_info'
+  and `type` = 'update'
+  and `old`['payment_status'] is not null
+  and `data`['payment_status'] = '1602';
+
+
+select
+    od.id order_detail_id,
+    od.order_id,
+    od.user_id,
+    od.sku_id,
+    od.sku_name,
+    od.province_id,
+    od.activity_id,
+    od.activity_rule_id,
+    od.coupon_id,
+    pi.payment_type payment_type_code,
+    dic.dic_name payment_type_name,
+    pi.callback_time,
+    od.sku_num,
+    od.order_price,
+    od.split_activity_amount,
+    od.split_coupon_amount,
+    od.split_total_amount,
+    pi.ts
+from payment_info pi
+         join dwd_trade_order_detail od
+              on pi.order_id = od.order_id
+                  and od.et >= pi.et - interval '30' minute
+                  and od.et <= pi.et + interval '5' second
+join base_dic for system_time as of pi.pt as dic
+on pi.payment_type = dic.dic_code;
+
+
+create table xxx
+(
+    id                    STRING,
+    order_id              STRING,
+    user_id               STRING,
+    sku_id                STRING,
+    sku_name              STRING,
+    province_id           STRING,
+    activity_id           STRING,
+    activity_rule_id      STRING,
+    coupon_id             STRING,
+    payment_type          STRING,
+    dic_name              STRING,
+    callback_time         STRING,
+    sku_num               STRING,
+    order_price           STRING,
+    split_activity_amount STRING,
+    split_coupon_amount   STRING,
+    split_total_amount    STRING,
+    ts                    bigint,
+    primary key (id) not enforced
 )

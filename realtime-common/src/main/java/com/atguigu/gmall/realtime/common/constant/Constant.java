@@ -15,6 +15,7 @@ public class Constant {
     public static final String MYSQL_PASSWORD = "000000";
     public static final String PROCESS_DATABASE = "gmall2023_config";
     public static final String PROCESS_DIM_TABLE_NAME = "table_process_dim";
+    public static final String PROCESS_DWD_TABLE_NAME = "table_process_dwd";
 
     public static final String HBASE_NAMESPACE = "gmall";
     public static final String HBASE_ZOOKEEPER_QUORUM = "hadoop102,hadoop103,hadoop104";

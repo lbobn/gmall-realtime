@@ -27,7 +27,9 @@ public class SQLUtil {
                 " `type` STRING,\n" +
                 "  `data` map<STRING,STRING>,\n" +
                 "  `old` map<STRING,STRING>,\n" +
-                "  `proc_time` as PROCTIME()" +
+                "  `proc_time` as PROCTIME()," +
+                "  row_time as TO_TIMESTAMP_LTZ(ts,3)," +
+                "  WATERMARK FOR row_time AS row_time - INTERVAL '5' SECOND" +
                 ") " + getKafkaSourceSQL(Constant.TOPIC_DB, groupId);
     }
 
