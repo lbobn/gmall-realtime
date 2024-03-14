@@ -103,17 +103,170 @@ where `database` = 'gmall'
         and cast(`data`['sku_num'] as bigint) > cast(`old`['sku_num'] as bigint))
     );
 
-create database dwd_trade_cart_add(
-    id STRING,
-    user_id STRING,
-    sku_id STRING,
-    cart_price STRING,
-    sku_num bigint,
-    sku_name STRING,
-    is_checked STRING,
-    create_time STRING,
+create table dwd_trade_cart_add
+(
+    id           STRING,
+    user_id      STRING,
+    sku_id       STRING,
+    cart_price   STRING,
+    sku_num      bigint,
+    sku_name     STRING,
+    is_checked   STRING,
+    create_time  STRING,
     operate_time STRING,
-    is_ordered STRING,
-    order_time STRING,
-    ts bigint
-    )
+    is_ordered   STRING,
+    order_time   STRING,
+    ts           bigint
+)
+
+
+-- dwd-下单
+
+select `data`['id']                    id,
+       `data`['order_id']              order_id,
+       `data`['sku_id']                sku_id,
+       `data`['sku_name']              sku_name,
+       `data`['order_price']           order_price,
+       `data`['sku_num']               sku_num,
+       `data`['create_time']           create_time,
+       `data`['split_total_amount']    split_total_amount,
+       `data`['split_activity_amount'] split_activity_amount,
+       `data`['split_coupon_amount']   split_coupon_amount,
+       `data`['operate_time']          operate_time,
+       ts
+from topic_db
+where `database` = 'gmall'
+  and `table` = 'order_detail'
+  and `type` = 'insert'
+;
+
+
+select `data`['id']          id,
+       `data`['user_id']     user_id,
+       `data`['province_id'] province_id
+from topic_db
+where `database` = 'gmall'
+  and `table` = 'order_info'
+  and `type` = 'insert';
+
+select od.id,
+       od.order_id,
+       od.sku_id,
+       od.sku_name,
+       od.order_price,
+       od.sku_num,
+       od.create_time,
+       od.split_total_amount,
+       od.split_activity_amount,
+       od.split_coupon_amount,
+       od.operate_time,
+       oi.user_id,
+       oi.province_id,
+       oda.activity_id,
+       oda.activity_rule_id,
+       odc.coupon_id,
+       od.ts
+from order_detail od
+         join order_info oi on od.order_id = oi.id
+         left join order_detail_activity oda on od.id = oda.order_detail_id
+         left join order_detail_coupon odc on od.id = odc.order_detail_id;
+
+
+--
+select `data`['order_detail_id']  order_detail_id,
+       `data`['activity_id']      activity_id,
+       `data`['activity_rule_id'] activity_rule_id
+from topic_db
+where `database` = 'gmall'
+  and `table` = 'order_detail_activity'
+  and `type` = 'insert';
+
+
+--
+select `data`['order_detail_id'] order_detail_id,
+       `data`['coupon_id']       coupon_id
+from topic_db
+where `database` = 'gmall'
+  and `table` = 'order_detail_coupon'
+  and `type` = 'insert'
+;
+
+
+-- kafkaSink表映射
+create table dwd_trade_order_detail
+(
+    id                    STRING,
+    order_id              STRING,
+    sku_id                STRING,
+    sku_name              STRING,
+    order_price           STRING,
+    sku_num               STRING,
+    create_time           STRING,
+    split_total_amount    STRING,
+    split_activity_amount STRING,
+    split_coupon_amount   STRING,
+    operate_time          STRING,
+    user_id               STRING,
+    province_id           STRING,
+    activity_id           STRING,
+    activity_rule_id      STRING,
+    coupon_id             STRING,
+    ts                    bigint
+)
+
+select od.id,
+       od.order_id,
+       od.sku_id,
+       od.sku_name,
+       od.order_price,
+       od.sku_num,
+       od.create_time,
+       od.split_total_amount,
+       od.split_activity_amount,
+       od.split_coupon_amount,
+       ct.operate_time,
+       od.user_id,
+       od.province_id,
+       od.activity_id,
+       od.activity_rule_id,
+       od.coupon_id,
+       ct.ts
+from cancel_table ct
+         join dwd_trade_order_detail od
+              on ct.id = od.order_id;
+
+
+
+select +
+           `data`['id']       id,
+       `data`['operate_time'] operate_time,
+       `data`['province_id']  province_id,
+       ts
+from topic_db
+where `database` = 'gmall'
+  and `table` = 'order_info'
+  and `type` = 'update'
+  and cast(`old`['order_status'] as STRING) = '1001'
+  and cast(`data`['order_status'] as STRING) = '1003';
+
+
+create table dwd_trade_order_cancel
+(
+    id                    STRING,
+    order_id              STRING,
+    sku_id                STRING,
+    sku_name              STRING,
+    order_price           STRING,
+    sku_num               STRING,
+    create_time           STRING,
+    split_total_amount    STRING,
+    split_activity_amount STRING,
+    split_coupon_amount   STRING,
+    operate_time          STRING,
+    user_id               STRING,
+    province_id           STRING,
+    activity_id           STRING,
+    activity_rule_id      STRING,
+    coupon_id             STRING,
+    ts                    bigint
+)

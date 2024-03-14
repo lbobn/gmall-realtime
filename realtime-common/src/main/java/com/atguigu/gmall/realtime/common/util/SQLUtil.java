@@ -39,4 +39,14 @@ public class SQLUtil {
                 "  'format' = 'json'\n" +
                 ")";
     }
+
+    public static String getUpsertKafkaSinkSQL(String topicName){
+        return "WITH (\n" +
+                "  'connector' = 'upsert-kafka',\n" +
+                "  'topic' = '" + topicName + "',\n" +
+                "  'properties.bootstrap.servers' = '" + Constant.KAFKA_BROKERS + "',\n" +
+                "  'key.format' = 'json',\n" +
+                "  'value.format' = 'json'\n" +
+                ")";
+    }
 }
