@@ -287,31 +287,30 @@ where `database` = 'gmall'
   and `data`['payment_status'] = '1602';
 
 
-select
-    od.id order_detail_id,
-    od.order_id,
-    od.user_id,
-    od.sku_id,
-    od.sku_name,
-    od.province_id,
-    od.activity_id,
-    od.activity_rule_id,
-    od.coupon_id,
-    pi.payment_type payment_type_code,
-    dic.dic_name payment_type_name,
-    pi.callback_time,
-    od.sku_num,
-    od.order_price,
-    od.split_activity_amount,
-    od.split_coupon_amount,
-    od.split_total_amount,
-    pi.ts
+select od.id           order_detail_id,
+       od.order_id,
+       od.user_id,
+       od.sku_id,
+       od.sku_name,
+       od.province_id,
+       od.activity_id,
+       od.activity_rule_id,
+       od.coupon_id,
+       pi.payment_type payment_type_code,
+       dic.dic_name    payment_type_name,
+       pi.callback_time,
+       od.sku_num,
+       od.order_price,
+       od.split_activity_amount,
+       od.split_coupon_amount,
+       od.split_total_amount,
+       pi.ts
 from payment_info pi
          join dwd_trade_order_detail od
               on pi.order_id = od.order_id
                   and od.et >= pi.et - interval '30' minute
                   and od.et <= pi.et + interval '5' second
-join base_dic for system_time as of pi.pt as dic
+         join base_dic for system_time as of pi.pt as dic
 on pi.payment_type = dic.dic_code;
 
 
@@ -336,4 +335,39 @@ create table xxx
     split_total_amount    STRING,
     ts                    bigint,
     primary key (id) not enforced
+);
+
+
+
+create table page_log
+(
+    page map<string,string>,
+    ts   bigint,
+    row_time as to_timestamp_ltz(ts,3),
+    watermark for row_time as row_time - interval '5' second
 )
+with ()
+
+select page['item'] keyword,
+       row_time
+from page_log
+where (page['last_page_id'] = 'search'
+    or page['last_page_id'] = 'home')
+  and page['item_type'] = 'keyword'
+  and page['item'] is not null;
+
+
+select key_word,
+       row_time
+from keywords_table
+         join lateral table (kw_split(keyword)) on true;
+
+
+select TUMBLE_START(row_time, INTERVAL '10' SECOND) as stt,
+       TUMBLE_END(row_time, INTERVAL '10' SECOND)   as edt,
+       CURRENT_DATE                                    cur_date,
+       keyword,
+       count(*)                                        keyword_count
+from keyword_table
+GROUP BY TUMBLE(row_time, INTERVAL '10' SECOND),
+         keyword

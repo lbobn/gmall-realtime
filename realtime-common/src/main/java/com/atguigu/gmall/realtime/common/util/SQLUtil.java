@@ -33,7 +33,7 @@ public class SQLUtil {
                 ") " + getKafkaSourceSQL(Constant.TOPIC_DB, groupId);
     }
 
-    public static String getKafkaSinkSQL(String topicName){
+    public static String getKafkaSinkSQL(String topicName) {
         return "WITH (\n" +
                 "  'connector' = 'kafka',\n" +
                 "  'topic' = '" + topicName + "',\n" +
@@ -42,13 +42,24 @@ public class SQLUtil {
                 ")";
     }
 
-    public static String getUpsertKafkaSinkSQL(String topicName){
+    public static String getUpsertKafkaSinkSQL(String topicName) {
         return "WITH (\n" +
                 "  'connector' = 'upsert-kafka',\n" +
                 "  'topic' = '" + topicName + "',\n" +
                 "  'properties.bootstrap.servers' = '" + Constant.KAFKA_BROKERS + "',\n" +
                 "  'key.format' = 'json',\n" +
                 "  'value.format' = 'json'\n" +
+                ")";
+    }
+
+    public static String getDorisSink(String tableName) {
+        return "with(" +
+                " 'connector' = 'doris'," +
+                " 'fenodes' = '" + Constant.DORIS_FE_NODES + "'," +
+                "  'table.identifier' = '" + Constant.DORIS_DATABASE + "." + tableName + "'," +
+                "  'username' = 'root'," +
+                "  'password' = 'aaaaaa', " +
+                "   'sink.label-prefix' = 'doris_label" + System.currentTimeMillis() + "'" +
                 ")";
     }
 }

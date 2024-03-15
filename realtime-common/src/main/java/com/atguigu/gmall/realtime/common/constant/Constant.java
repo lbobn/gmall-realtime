@@ -20,6 +20,10 @@ public class Constant {
     public static final String HBASE_NAMESPACE = "gmall";
     public static final String HBASE_ZOOKEEPER_QUORUM = "hadoop102,hadoop103,hadoop104";
 
+    public static final String DORIS_FE_NODES = "hadoop102:7030";
+
+    public static final String DORIS_DATABASE = "gmall2023_realtime";
+
 
     public static final String MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver";
     public static final String MYSQL_URL = "jdbc:mysql://hadoop102:3306?useSSL=false";
