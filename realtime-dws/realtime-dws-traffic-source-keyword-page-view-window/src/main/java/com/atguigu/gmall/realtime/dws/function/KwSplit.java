@@ -9,7 +9,7 @@ import org.apache.flink.types.Row;
 import java.util.List;
 
 /**
- * @description
+ * @description 自定义UDTF函数
  * @Author lubb
  * @create 2024-03-15 21:27
  */
