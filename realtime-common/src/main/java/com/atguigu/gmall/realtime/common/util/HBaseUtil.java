@@ -10,6 +10,7 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -158,6 +159,25 @@ public class HBaseUtil {
         return jsonObject;
     }
 
+    public static JSONObject getAsyncCells(AsyncConnection asyncConnection, String namespace, String tableName, String rowKey) throws IOException {
+        AsyncTable<AdvancedScanResultConsumer> table = asyncConnection.getTable(TableName.valueOf(namespace));
+
+        JSONObject jsonObject = new JSONObject();
+        Get get = new Get(Bytes.toBytes(rowKey));
+
+
+        try {
+            Result result = table.get(get).get();
+            for (Cell cell : result.rawCells()) {
+                jsonObject.put(new String(CellUtil.cloneQualifier(cell)),new String(CellUtil.cloneValue(cell)));
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return jsonObject;
+    }
+
     /**
      * 删除整行数据
      * @param connection 同步连接
@@ -179,5 +199,36 @@ public class HBaseUtil {
 
         //关闭Table
         table.close();
+    }
+
+    /**
+     * 获取到 Hbase 的异步连接
+     *
+     * @return 得到异步连接对象
+     */
+    public static AsyncConnection getHBaseAsyncConnection() {
+        Configuration conf = new Configuration();
+        conf.set("hbase.zookeeper.quorum", "hadoop102");
+        conf.set("hbase.zookeeper.property.clientPort", "2181");
+        try {
+            return ConnectionFactory.createAsyncConnection(conf).get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 关闭 hbase 异步连接
+     *
+     * @param asyncConn 异步连接
+     */
+    public static void closeAsyncHbaseConnection(AsyncConnection asyncConn) {
+        if (asyncConn != null) {
+            try {
+                asyncConn.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
