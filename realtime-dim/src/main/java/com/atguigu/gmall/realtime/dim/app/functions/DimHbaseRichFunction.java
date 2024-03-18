@@ -4,25 +4,30 @@ import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall.realtime.common.bean.TableProcessDim;
 import com.atguigu.gmall.realtime.common.constant.Constant;
 import com.atguigu.gmall.realtime.common.util.HBaseUtil;
+import com.atguigu.gmall.realtime.common.util.RedisUtil;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.hadoop.hbase.client.Connection;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 
 public class DimHbaseRichFunction extends RichSinkFunction<Tuple2<JSONObject, TableProcessDim>> {
     Connection connection;
+    Jedis jedis;
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
         connection = HBaseUtil.getConnection();
+        jedis = RedisUtil.getJedis();
     }
 
     @Override
     public void close() throws Exception {
         super.close();
         HBaseUtil.closeConnection(connection);
+        RedisUtil.closeJedis(jedis);
     }
 
     @Override
@@ -37,6 +42,13 @@ public class DimHbaseRichFunction extends RichSinkFunction<Tuple2<JSONObject, Ta
         }else{
             // 覆盖写入
             writeToHbase(data,f1);
+        }
+
+        // 判断redis是否需要变化
+        if("delete".equals(type) || "update".equals(type)){
+            // 删除redis中对应的key-value
+            String key = RedisUtil.getKey(f1.getSinkTable(), data.getString(f1.getSinkRowKey()));
+            jedis.del(key);
         }
 
     }
