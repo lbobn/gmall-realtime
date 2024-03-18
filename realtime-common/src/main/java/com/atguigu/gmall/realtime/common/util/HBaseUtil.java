@@ -3,6 +3,8 @@ package com.atguigu.gmall.realtime.common.util;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall.realtime.common.constant.Constant;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -134,6 +136,26 @@ public class HBaseUtil {
 
         //关闭Table
         table.close();
+    }
+
+    public static JSONObject getCells(Connection connection, String namespace, String tableName, String rowKey) throws IOException {
+        Table table = connection.getTable(TableName.valueOf(namespace));
+
+        JSONObject jsonObject = new JSONObject();
+        Get get = new Get(Bytes.toBytes(rowKey));
+
+
+        try {
+            Result result = table.get(get);
+            for (Cell cell : result.rawCells()) {
+                jsonObject.put(new String(CellUtil.cloneQualifier(cell)),new String(CellUtil.cloneValue(cell)));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        table.close();
+        return jsonObject;
     }
 
     /**
