@@ -39,14 +39,14 @@ import java.time.Duration;
  * @create 2024-03-18 16:53
  */
 public class DwsTradeSkuOrderWindow extends BaseAPP {
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         new DwsTradeSkuOrderWindow().start(
                 10027,
                 4,
                 "dws_trade_sku_order_window",
                 Constant.TOPIC_DWD_TRADE_ORDER_DETAIL
         );
-    }
+    }*/
 
     @Override
     public void handle(StreamExecutionEnvironment env, DataStreamSource<String> stream) {

@@ -89,6 +89,15 @@ public class DwsTradeSkuOrderWindowASyncCache extends BaseAPP {
         SingleOutputStreamOperator<TradeSkuOrderBean> reduceBeanStream = getReduceBeanStream(processBeanStream);
 //        reduceBeanStream.print();
         // 6. 关联维度
+
+        SingleOutputStreamOperator<TradeSkuOrderBean> fullDimStream = joinDimStream(reduceBeanStream);
+//        fullDimStream.print();
+        // 7. 写出doris
+        fullDimStream.map(new DorisMapFunction<>())
+                .sinkTo(FlinkSinkUtil.getDorisSink(Constant.DWS_TRADE_SKU_ORDER_WINDOW));
+    }
+
+    private static SingleOutputStreamOperator<TradeSkuOrderBean> joinDimStream(SingleOutputStreamOperator<TradeSkuOrderBean> reduceBeanStream) {
         // 6.1 商品信息
         SingleOutputStreamOperator<TradeSkuOrderBean> skuInfoStream = AsyncDataStream.unorderedWait(reduceBeanStream,
                 new DimAsyncFunction<TradeSkuOrderBean>() {
@@ -209,10 +218,7 @@ public class DwsTradeSkuOrderWindowASyncCache extends BaseAPP {
 
             }
         }, 60, TimeUnit.SECONDS);
-//        fullDimStream.print();
-        // 7. 写出doris
-        fullDimStream.map(new DorisMapFunction<>())
-                .sinkTo(FlinkSinkUtil.getDorisSink(Constant.DWS_TRADE_SKU_ORDER_WINDOW));
+        return fullDimStream;
     }
 
 
