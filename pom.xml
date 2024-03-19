@@ -13,7 +13,6 @@
         <module>realtime-dim</module>
         <module>realtime-dwd</module>
         <module>realtime-dws</module>
-        <module>realtime-dwd/realtime-dwd-trade-order-pay-suc-detail</module>
     </modules>
 
     <properties>
