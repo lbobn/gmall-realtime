@@ -19,6 +19,7 @@
         <module>realtime-dws-user-user-register-window</module>
         <module>realtime-dws-trade-cart-add-uu-window</module>
         <module>realtime-dws-trade-sku-order-window</module>
+        <module>realtime-dws-trade-province-order-window</module>
     </modules>
 
     <properties>

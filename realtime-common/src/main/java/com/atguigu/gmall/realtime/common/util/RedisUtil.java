@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall.realtime.common.constant.Constant;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -97,5 +98,50 @@ public class RedisUtil {
         if (redisAsyncConn != null) {
             redisAsyncConn.close();
         }
+    }
+
+    /**
+     * 异步的方式从 redis 读取维度数据
+     * @param redisAsyncConn 异步连接
+     * @param tableName 表名
+     * @param id id 的值
+     * @return 读取到维度数据,封装的 json 对象中
+     */
+    public static JSONObject readDimAsync(StatefulRedisConnection<String, String> redisAsyncConn,
+                                          String tableName,
+                                          String id) {
+        RedisAsyncCommands<String, String> asyncCommand = redisAsyncConn.async();
+        String key = getKey(tableName, id);
+        try {
+            String json = asyncCommand.get(key).get();
+            if (json != null) {
+                return JSON.parseObject(json);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
+    }
+
+    /**
+     * 把维度异步的写入到 redis 中
+     * @param redisAsyncConn  到 redis 的异步连接
+     * @param tableName 表名
+     * @param id id 的值
+     * @param dim 要写入的维度数据
+     */
+    public static void writeDimAsync(StatefulRedisConnection<String, String> redisAsyncConn,
+                                     String tableName,
+                                     String id,
+                                     JSONObject dim) {
+        // 1. 得到异步命令
+        RedisAsyncCommands<String, String> asyncCommand = redisAsyncConn.async();
+
+        String key = getKey(tableName, id);
+        // 2. 写入到 string 中: 顺便还设置的 ttl
+        asyncCommand.setex(key, Constant.TWO_DAY_SECONDS, dim.toJSONString());
+
     }
 }

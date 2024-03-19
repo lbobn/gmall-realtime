@@ -47,53 +47,58 @@ public abstract class DimAsyncFunction<T> extends RichAsyncFunction<T, T> implem
     }
 
     @Override
-    public void asyncInvoke(T bean, ResultFuture<T> resultFuture) throws Exception {
-        String rowKey = getRowKey(bean);
+    public void asyncInvoke(T input, ResultFuture<T> resultFuture) throws Exception {
+        String rowKey = getRowKey(input);
         String tableName = getTableName();
         String key = RedisUtil.getKey(tableName, rowKey);
 
         CompletableFuture.supplyAsync(new Supplier<String>() {
             @Override
             public String get() {
+//                System.out.println("获取到的redis连接=========>" + redisAsyncConnection);
                 // 第一步异步访问的值
                 RedisFuture<String> dimSkuInfoFuture = redisAsyncConnection.async().get(key);
-                String dim_info = null;
+                String dimInfo = null;
                 try {
-                    dim_info= dimSkuInfoFuture.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
+                    dimInfo= dimSkuInfoFuture.get();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                return dim_info;
+
+                return dimInfo;
             }
         }).thenApplyAsync(new Function<String, JSONObject>() {
             @Override
-            public JSONObject apply(String s) {
-                JSONObject jsonObject = null;
-                if(s == null || s.length() == 0){
+            public JSONObject apply(String dimInfo) {
+                JSONObject dimJsonObj = JSONObject.parseObject(dimInfo);
+                if(dimJsonObj == null || dimJsonObj.size() == 0){
                     //访问hbase
                     try {
-                        jsonObject = HBaseUtil.getAsyncCells(hBaseAsyncConnection, Constant.HBASE_NAMESPACE, tableName, rowKey);
+                        dimJsonObj = HBaseUtil.getAsyncCells(hBaseAsyncConnection, Constant.HBASE_NAMESPACE, tableName, rowKey);
+//                        System.out.println("读取到Hbase数据===>" + dimJsonObj.toJSONString());
                         // 将读取的数据保存到redis
-                        redisAsyncConnection.async().setex(key,24*60*60,jsonObject.toJSONString());
+                        redisAsyncConnection.async().setex(key,24*60*60,dimJsonObj.toJSONString());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }else{
                     // redis 中存在数据
-                    jsonObject = JSONObject.parseObject(s);
+//                    dimJsonObj = JSONObject.parseObject(dimInfo);
+//                    System.out.println("redis中读取到数据===>"+dimJsonObj.toJSONString());
                 }
-                return jsonObject;
+                return dimJsonObj;
             }
         }).thenAccept(new Consumer<JSONObject>() {
             @Override
-            public void accept(JSONObject jsonObject) {
+            public void accept(JSONObject dim) {
                 // 合并维度并返回
-                if(jsonObject == null){
+                if(dim == null){
                     // 无维度数据
+                    System.out.println("无维度信息");
                 }else{
-                    join(bean,jsonObject);
+                    join(input,dim);
                 }
-                resultFuture.complete(Collections.singletonList(bean));
+                resultFuture.complete(Collections.singletonList(input));
             }
         });
     }

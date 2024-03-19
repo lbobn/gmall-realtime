@@ -140,7 +140,7 @@ public class HBaseUtil {
     }
 
     public static JSONObject getCells(Connection connection, String namespace, String tableName, String rowKey) throws IOException {
-        Table table = connection.getTable(TableName.valueOf(namespace));
+        Table table = connection.getTable(TableName.valueOf(namespace,tableName));
 
         JSONObject jsonObject = new JSONObject();
         Get get = new Get(Bytes.toBytes(rowKey));
@@ -160,7 +160,7 @@ public class HBaseUtil {
     }
 
     public static JSONObject getAsyncCells(AsyncConnection asyncConnection, String namespace, String tableName, String rowKey) throws IOException {
-        AsyncTable<AdvancedScanResultConsumer> table = asyncConnection.getTable(TableName.valueOf(namespace));
+        AsyncTable<AdvancedScanResultConsumer> table = asyncConnection.getTable(TableName.valueOf(namespace,tableName));
 
         JSONObject jsonObject = new JSONObject();
         Get get = new Get(Bytes.toBytes(rowKey));
@@ -171,7 +171,7 @@ public class HBaseUtil {
             for (Cell cell : result.rawCells()) {
                 jsonObject.put(new String(CellUtil.cloneQualifier(cell)),new String(CellUtil.cloneValue(cell)));
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
